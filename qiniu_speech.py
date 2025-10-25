@@ -15,7 +15,7 @@ import speech_recognition as sr
 class QiniuSpeechRecognizer:
     def __init__(self, api_key: str = None, api_url: str = None):
         self.api_key = api_key or os.getenv("QINIU_SPEECH_API_KEY")
-        self.api_url = api_url or os.getenv("QINIU_SPEECH_API_URL", "https://api.qiniu.com/v1/speech/recognize")
+        self.api_url = api_url or os.getenv("QINIU_SPEECH_API_URL", "https://openai.qiniu.com/v1/voice/asr")
         
         if not self.api_key:
             raise ValueError("QINIU_SPEECH_API_KEY not set")
@@ -78,22 +78,29 @@ class QiniuSpeechRecognizer:
     async def _recognize_with_qiniu(self, audio_data) -> Optional[str]:
         """使用七牛云API识别语音"""
         try:
+            import base64
+            
             audio_bytes = audio_data.get_wav_data()
+            audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
             
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "audio/wav"
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "model": "asr",
+                "audio": {
+                    "format": "wav",
+                    "data": audio_base64
+                }
             }
             
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
                     self.api_url,
                     headers=headers,
-                    content=audio_bytes,
-                    params={
-                        "language": "zh-CN",
-                        "format": "wav"
-                    }
+                    json=payload
                 )
                 
                 if response.status_code == 200:
