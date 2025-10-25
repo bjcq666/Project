@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "amap-maps-streamableHTTP": {
+      "url": "https://mcp.amap.com/mcp?key=YOUR_AMAP_API_KEY_HERE"
+    }
+  },
+  "qiniu": {
+    "accessKey": "YOUR_QINIU_ACCESS_KEY",
+    "secretKey": "YOUR_QINIU_SECRET_KEY",
+    "bucket": "YOUR_BUCKET_NAME"
+  },
+  "ai": {
+    "provider": "qiniu",
+    "qiniu": {
+      "apiUrl": "https://api.qiniu.com/v1/ai/inference",
+      "model": "gpt-3.5-turbo"
+    },
+    "anthropic": {
+      "apiKey": "YOUR_ANTHROPIC_API_KEY",
+      "model": "claude-3-5-sonnet-20241022"
+    }
+  },
+  "defaultMapService": "amap"
+}
