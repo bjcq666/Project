@@ -9,3 +9,6 @@ mcp>=0.9.0
 SpeechRecognition>=3.8.1
 pyaudio>=0.2.11
 vosk>=0.3.44
+
+# 七牛云语音识别和位置服务依赖
+requests>=2.31.0

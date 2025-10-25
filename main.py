@@ -10,8 +10,10 @@ import json
 from ai_provider import create_ai_provider
 from mcp_client import create_mcp_client, TransportType, AuthType
 from amap_mcp_client import create_amap_client
-# 导入新的语音识别模块
 from voice_recognizer import get_voice_input
+from qiniu_speech import get_qiniu_voice_input
+from text_optimizer import optimize_text
+from location_service import get_current_location
 
 async def get_location_coordinates(location_name: str, mcp_client) -> dict:
     """
@@ -152,25 +154,30 @@ async def main():
         print("  export AMAP_MCP_SERVER_URL='http://localhost:3000'")
         return
     
-    # 添加语音输入选项
     print("请选择输入方式:")
     print("1. 文本输入")
-    print("2. 语音输入")
-    input_type = input("请选择 (1/2): ").strip()
+    print("2. 语音输入 (本地/Google)")
+    print("3. 七牛云语音输入")
+    input_type = input("请选择 (1/2/3): ").strip()
     
     user_input = None
     
-    if input_type == "2":
-        # 使用语音输入
+    if input_type == "3":
+        user_input = await get_qiniu_voice_input()
+    elif input_type == "2":
         user_input = await get_voice_input()
     else:
-        # 默认使用文本输入
         print("Enter your navigation request (e.g., '从北京到上海', '我要从广州去深圳'):")
         user_input = input("> ").strip()
     
     if not user_input:
         print("No input provided.")
         return
+    
+    optimized_text, was_optimized = optimize_text(user_input)
+    if was_optimized:
+        print(f"✓ 文本优化: '{user_input}' → '{optimized_text}'")
+        user_input = optimized_text
     
     print(f"\n[1/5] Connecting to geocoding service...")
     
@@ -240,12 +247,26 @@ async def main():
         
         print(f"\n[3/5] Getting coordinates for start location...")
         try:
-            if use_mcp and mcp_client:
-                start_coords = await get_location_coordinates(locations['start'], mcp_client)
+            if locations['start'] in ['当前位置', '这里', '我的位置']:
+                print("检测到当前位置请求，正在获取地理位置...")
+                start_coords = await get_current_location()
+                if start_coords:
+                    print(f"✓ 当前位置: {start_coords['formatted_address']} ({start_coords['longitude']}, {start_coords['latitude']})")
+                else:
+                    print("⚠️  无法获取当前位置，使用默认位置")
+                    start_coords = {
+                        "name": "当前位置",
+                        "longitude": 116.397128,
+                        "latitude": 39.916527,
+                        "formatted_address": "当前位置"
+                    }
             else:
-                async with amap_client:
-                    start_coords = await amap_client.geocode(locations['start'])
-            print(f"✓ Start: {start_coords['name']} ({start_coords['longitude']}, {start_coords['latitude']})")
+                if use_mcp and mcp_client:
+                    start_coords = await get_location_coordinates(locations['start'], mcp_client)
+                else:
+                    async with amap_client:
+                        start_coords = await amap_client.geocode(locations['start'])
+                print(f"✓ Start: {start_coords['name']} ({start_coords['longitude']}, {start_coords['latitude']})")
         except Exception as e:
             print(f"✗ Failed to get start coordinates: {e}")
             return

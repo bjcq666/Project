@@ -28,6 +28,11 @@ class ClaudeProvider(AIProvider):
         prompt = f"""Parse this navigation request and extract the start location (A) and end location (B).
 Return a JSON object with 'start' and 'end' keys.
 
+Important rules:
+- If user says "附近" (nearby), "当前位置" (current location), or similar, use "当前位置" as the start location
+- If only destination is mentioned, use "当前位置" as the start location
+- Extract actual city/place names from the text
+
 User request: {user_input}
 
 Response format:
@@ -64,6 +69,11 @@ class OpenAICompatibleProvider(AIProvider):
     async def parse_navigation_request(self, user_input: str) -> dict:
         prompt = f"""Parse this navigation request and extract the start location (A) and end location (B).
 Return a JSON object with 'start' and 'end' keys.
+
+Important rules:
+- If user says "附近" (nearby), "当前位置" (current location), or similar, use "当前位置" as the start location
+- If only destination is mentioned, use "当前位置" as the start location
+- Extract actual city/place names from the text
 
 User request: {user_input}
 
