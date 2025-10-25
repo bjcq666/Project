@@ -10,6 +10,7 @@ import json
 from ai_provider import create_ai_provider
 from mcp_client import create_mcp_client, TransportType, AuthType
 from amap_mcp_client import create_amap_client
+from browser_mcp_client import create_browser_client
 
 async def get_location_coordinates(location_name: str, mcp_client) -> dict:
     """
@@ -94,27 +95,22 @@ async def parse_navigation_request(user_input: str, ai_provider) -> dict:
     """
     return await ai_provider.parse_navigation_request(user_input)
 
-async def open_browser_navigation(start_coords: dict, end_coords: dict):
+async def open_browser_navigation(start_coords: dict, end_coords: dict, browser_client):
     """
-    Use browser control MCP server to open navigation.
-    For now, we directly open the browser.
+    Use browser control MCP server to open navigation via MCP protocol.
     """
-    import webbrowser
-    
-    url = (
-        f"https://uri.amap.com/navigation?"
-        f"from={start_coords['longitude']},{start_coords['latitude']}&"
-        f"to={end_coords['longitude']},{end_coords['latitude']}&"
-        f"mode=car&policy=1&src=ai-navigator&coordinate=gaode&callnative=0"
-    )
-    
-    webbrowser.open(url)
-    
-    return {
-        "success": True,
-        "message": f"Navigation opened from {start_coords['name']} to {end_coords['name']}",
-        "url": url
-    }
+    try:
+        result = await browser_client.open_map_navigation(
+            start_lng=start_coords['longitude'],
+            start_lat=start_coords['latitude'],
+            end_lng=end_coords['longitude'],
+            end_lat=end_coords['latitude'],
+            start_name=start_coords.get('name', '起点'),
+            end_name=end_coords.get('name', '终点')
+        )
+        return result
+    except Exception as e:
+        raise ValueError(f"Failed to open navigation via MCP: {str(e)}")
 
 async def main():
     """Main application flow."""
@@ -241,13 +237,19 @@ async def main():
             print(f"✗ Failed to get end coordinates: {e}")
             return
         
-        print(f"\n[5/5] Opening navigation in browser...")
+        print(f"\n[5/5] Opening navigation in browser via MCP...")
         try:
-            result = await open_browser_navigation(start_coords, end_coords)
-            print(f"✓ {result['message']}")
-            print(f"\nNavigation URL: {result['url']}")
+            browser_client = create_browser_client()
+            async with browser_client:
+                result = await open_browser_navigation(start_coords, end_coords, browser_client)
+                if result.get('success'):
+                    print(f"✓ {result['message']}")
+                    print(f"\nNavigation URL: {result.get('url', 'N/A')}")
+                else:
+                    print(f"✗ Failed to open navigation: {result.get('error', 'Unknown error')}")
+                    return
         except Exception as e:
-            print(f"✗ Failed to open navigation: {e}")
+            print(f"✗ Failed to open navigation via MCP: {e}")
             return
         
         print("\n=== Navigation request completed successfully! ===")

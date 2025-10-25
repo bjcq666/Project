@@ -33,9 +33,15 @@ AI解析(Claude)
    - 提供地理编码功能
    - 支持Mock模式用于测试
 
-3. **主应用程序** (`main.py`)
+3. **Browser Control MCP Client** (`browser_mcp_client.py`)
+   - 连接到浏览器控制MCP服务器
+   - 通过MCP协议控制浏览器
+   - 提供导航URL打开功能
+
+4. **主应用程序** (`main.py`)
    - AI指令解析(Claude)
    - 通过MCP协议调用高德地图服务
+   - 通过MCP协议控制浏览器打开导航
    - 协调各MCP服务器
 
 ## 快速开始
@@ -130,7 +136,9 @@ python mcp_browser_server.py
 ├── main.py                 # 主应用程序
 ├── ai_provider.py          # AI提供商抽象层
 ├── amap_mcp_client.py      # 高德地图MCP客户端
+├── browser_mcp_client.py   # 浏览器控制MCP客户端
 ├── mcp_browser_server.py   # 浏览器控制MCP服务器
+├── mcp_client.py           # 通用MCP客户端
 ├── requirements.txt        # Python依赖
 └── README.md              # 项目文档
 ```
@@ -255,6 +263,7 @@ Note: Using mock Amap MCP client. Set AMAP_MCP_SERVER_PATH or AMAP_API_KEY to us
 ## 扩展功能(后续版本)
 
 - [x] 集成高德地图MCP Server(已通过MCP协议调用)
+- [x] 浏览器控制统一通过MCP协议
 - [ ] 支持语音输入MCP Server
 - [ ] 支持多种地图服务(百度地图等)
 - [ ] 桌面应用版本(Electron)
