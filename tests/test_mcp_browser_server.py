@@ -138,7 +138,7 @@ class TestHandleCallTool:
         assert "Unknown tool" in data["error"]
     
     @pytest.mark.asyncio
-    async def test_open_map_navigation_url_encoding(self):
+    async def test_open_map_navigation_no_name_labels(self):
         with patch('webbrowser.open') as mock_open:
             arguments = {
                 "start_lng": 116.397128,
@@ -154,6 +154,5 @@ class TestHandleCallTool:
             data = json.loads(result[0].text)
             assert data["success"] is True
             called_url = mock_open.call_args[0][0]
-            assert "天安门广场" not in called_url
-            assert "东方明珠" not in called_url
-            assert "%E5%" in called_url or "sname=" in called_url
+            assert "sname=" not in called_url
+            assert "dname=" not in called_url
