@@ -104,19 +104,22 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[TextCon
         start_lat = arguments.get("start_lat")
         end_lng = arguments.get("end_lng")
         end_lat = arguments.get("end_lat")
-        start_name = arguments.get("start_name", "起点")
-        end_name = arguments.get("end_name", "终点")
+        start_name = arguments.get("start_name")
+        end_name = arguments.get("end_name")
         
         try:
             url = f"https://uri.amap.com/navigation?from={start_lng},{start_lat}&to={end_lng},{end_lat}&mode=car&policy=1&src=myapp&coordinate=gaode&callnative=1"
             
             webbrowser.open(url)
             
+            from_text = start_name if start_name else f"({start_lng},{start_lat})"
+            to_text = end_name if end_name else f"({end_lng},{end_lat})"
+            
             return [TextContent(
                 type="text",
                 text=json.dumps({
                     "success": True,
-                    "message": f"Opened navigation from {start_name} to {end_name}",
+                    "message": f"Opened navigation from {from_text} to {to_text}",
                     "url": url
                 })
             )]
