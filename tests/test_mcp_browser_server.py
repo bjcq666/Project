@@ -94,7 +94,7 @@ class TestHandleCallTool:
             mock_open.assert_called_once()
     
     @pytest.mark.asyncio
-    async def test_open_map_navigation_default_names(self):
+    async def test_open_map_navigation_without_names(self):
         with patch('webbrowser.open') as mock_open:
             arguments = {
                 "start_lng": 116.397128,
@@ -108,11 +108,11 @@ class TestHandleCallTool:
             assert len(result) == 1
             data = json.loads(result[0].text)
             assert data["success"] is True
-            assert "起点" in data["message"]
-            assert "终点" in data["message"]
+            assert "116.397128" in data["message"]
+            assert "121.473701" in data["message"]
             called_url = mock_open.call_args[0][0]
-            assert "sname=" in called_url
-            assert "dname=" in called_url
+            assert "sname=" not in called_url
+            assert "dname=" not in called_url
     
     @pytest.mark.asyncio
     async def test_open_map_navigation_exception(self):
