@@ -104,14 +104,24 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[TextCon
         start_lat = arguments.get("start_lat")
         end_lng = arguments.get("end_lng")
         end_lat = arguments.get("end_lat")
-        start_name = arguments.get("start_name", "起点")
-        end_name = arguments.get("end_name", "终点")
+        start_name = arguments.get("start_name")
+        end_name = arguments.get("end_name")
         
         try:
             import urllib.parse
-            sname = urllib.parse.quote(start_name)
-            dname = urllib.parse.quote(end_name)
-            url = f"https://uri.amap.com/navigation?from={start_lng},{start_lat}&to={end_lng},{end_lat}&sname={sname}&dname={dname}&mode=car&policy=1&src=myapp&coordinate=gaode&callnative=1"
+            
+            # Build URL with coordinates
+            url = f"https://uri.amap.com/navigation?from={start_lng},{start_lat}&to={end_lng},{end_lat}"
+            
+            # Only add sname/dname if names are provided
+            if start_name:
+                sname = urllib.parse.quote(start_name)
+                url += f"&sname={sname}"
+            if end_name:
+                dname = urllib.parse.quote(end_name)
+                url += f"&dname={dname}"
+            
+            url += "&mode=car&policy=1&src=myapp&coordinate=gaode&callnative=1"
             
             webbrowser.open(url)
             

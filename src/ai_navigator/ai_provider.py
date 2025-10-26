@@ -234,15 +234,23 @@ Only return JSON, no other text."""
         response_text = message.content[0].text.strip()
         params = self._parse_json_response(response_text)
         
-        sname = urllib.parse.quote(start_coords['name'])
-        dname = urllib.parse.quote(end_coords['name'])
-        
+        # Build URL with coordinates
         url = (
             f"https://uri.amap.com/navigation?"
             f"from={start_coords['longitude']},{start_coords['latitude']}&"
-            f"to={end_coords['longitude']},{end_coords['latitude']}&"
-            f"sname={sname}&dname={dname}&"
-            f"mode={params.get('mode', 'car')}&"
+            f"to={end_coords['longitude']},{end_coords['latitude']}"
+        )
+        
+        # Only add sname/dname if names are provided and not default values
+        if start_coords.get('name') and start_coords['name'] not in ['起点', 'Start']:
+            sname = urllib.parse.quote(start_coords['name'])
+            url += f"&sname={sname}"
+        if end_coords.get('name') and end_coords['name'] not in ['终点', 'End']:
+            dname = urllib.parse.quote(end_coords['name'])
+            url += f"&dname={dname}"
+        
+        url += (
+            f"&mode={params.get('mode', 'car')}&"
             f"policy={params.get('policy', 1)}&"
             f"src=ai-navigator&coordinate=gaode&"
             f"callnative={params.get('callnative', 1)}"
@@ -485,15 +493,23 @@ Only return JSON, no other text."""
             response_text = data["choices"][0]["message"]["content"].strip()
             params = self._parse_json_response(response_text)
         
-        sname = urllib.parse.quote(start_coords['name'])
-        dname = urllib.parse.quote(end_coords['name'])
-        
+        # Build URL with coordinates
         url = (
             f"https://uri.amap.com/navigation?"
             f"from={start_coords['longitude']},{start_coords['latitude']}&"
-            f"to={end_coords['longitude']},{end_coords['latitude']}&"
-            f"sname={sname}&dname={dname}&"
-            f"mode={params.get('mode', 'car')}&"
+            f"to={end_coords['longitude']},{end_coords['latitude']}"
+        )
+        
+        # Only add sname/dname if names are provided and not default values
+        if start_coords.get('name') and start_coords['name'] not in ['起点', 'Start']:
+            sname = urllib.parse.quote(start_coords['name'])
+            url += f"&sname={sname}"
+        if end_coords.get('name') and end_coords['name'] not in ['终点', 'End']:
+            dname = urllib.parse.quote(end_coords['name'])
+            url += f"&dname={dname}"
+        
+        url += (
+            f"&mode={params.get('mode', 'car')}&"
             f"policy={params.get('policy', 1)}&"
             f"src=ai-navigator&coordinate=gaode&"
             f"callnative={params.get('callnative', 1)}"
