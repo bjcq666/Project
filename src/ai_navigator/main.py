@@ -500,8 +500,8 @@ async def open_browser_navigation(start_coords: dict, end_coords: dict, ai_provi
                     "start_lat": start_coords['latitude'],
                     "end_lng": end_coords['longitude'],
                     "end_lat": end_coords['latitude'],
-                    "start_name": start_coords.get('name'),
-                    "end_name": end_coords.get('name'),
+                    "start_name": start_coords.get('name', '起点'),
+                    "end_name": end_coords.get('name', '终点'),
                     "mode": result_dict.get('mode', 'car'),
                     "policy": result_dict.get('policy', 1),
                     "callnative": result_dict.get('callnative', 1)
