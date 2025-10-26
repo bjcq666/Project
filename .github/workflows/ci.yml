@@ -115,7 +115,7 @@ jobs:
 
       - name: Install project dependencies
         run: |
-          pip install -e ".[dev]" pytest-cov
+          pip install -e ".[dev]"
 
       - name: Verify imports
         run: |
