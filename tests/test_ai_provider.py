@@ -50,6 +50,87 @@ class TestClaudeProvider:
         provider = ClaudeProvider(api_key="test-key")
         result = provider._parse_json_response('Some text {"key": "value"} more text')
         assert result == {"key": "value"}
+    
+    @pytest.mark.asyncio
+    async def test_select_mcp_tool_success(self):
+        provider = ClaudeProvider(api_key="test-key")
+        
+        mock_message = Mock()
+        mock_message.content = [Mock(text='''{
+            "tool_name": "geocode",
+            "arguments": {"address": "北京"},
+            "reasoning": "Use geocode to get coordinates for Beijing"
+        }''')]
+        
+        available_tools = [
+            {
+                "name": "geocode",
+                "description": "Convert address to coordinates",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"address": {"type": "string"}},
+                    "required": ["address"]
+                }
+            },
+            {
+                "name": "search_poi",
+                "description": "Search for points of interest",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"query": {"type": "string"}},
+                    "required": ["query"]
+                }
+            }
+        ]
+        
+        with patch.object(provider.client.messages, 'create', return_value=mock_message):
+            result = await provider.select_mcp_tool(
+                user_intent="获取北京的坐标",
+                available_tools=available_tools
+            )
+            
+            assert result["tool_name"] == "geocode"
+            assert result["arguments"] == {"address": "北京"}
+            assert "reasoning" in result
+    
+    @pytest.mark.asyncio
+    async def test_select_mcp_tool_with_context(self):
+        provider = ClaudeProvider(api_key="test-key")
+        
+        mock_message = Mock()
+        mock_message.content = [Mock(text='''{
+            "tool_name": "get_current_location",
+            "arguments": {},
+            "reasoning": "User wants current location based on context"
+        }''')]
+        
+        available_tools = [
+            {
+                "name": "get_current_location",
+                "description": "Get user's current location",
+                "inputSchema": {"type": "object", "properties": {}}
+            },
+            {
+                "name": "geocode",
+                "description": "Convert address to coordinates",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"address": {"type": "string"}}
+                }
+            }
+        ]
+        
+        context = {"is_current_location": True}
+        
+        with patch.object(provider.client.messages, 'create', return_value=mock_message):
+            result = await provider.select_mcp_tool(
+                user_intent="获取当前位置的坐标",
+                available_tools=available_tools,
+                context=context
+            )
+            
+            assert result["tool_name"] == "get_current_location"
+            assert result["arguments"] == {}
 
 
 class TestOpenAICompatibleProvider:
@@ -115,6 +196,111 @@ class TestOpenAICompatibleProvider:
             model="test-model"
         )
         assert provider.base_url == "https://api.test.com/v1"
+    
+    @pytest.mark.asyncio
+    async def test_select_mcp_tool_success(self):
+        provider = OpenAICompatibleProvider(
+            api_key="test-key",
+            base_url="https://api.test.com/v1",
+            model="gpt-3.5-turbo"
+        )
+        
+        mock_response = Mock()
+        mock_response.raise_for_status = Mock()
+        mock_response.aread = AsyncMock(return_value=json.dumps({
+            "choices": [{
+                "message": {
+                    "content": json.dumps({
+                        "tool_name": "maps_geo",
+                        "arguments": {"address": "上海市"},
+                        "reasoning": "Use maps_geo to geocode Shanghai"
+                    }, ensure_ascii=False)
+                }
+            }]
+        }).encode('utf-8'))
+        
+        available_tools = [
+            {
+                "name": "maps_geo",
+                "description": "Geocode an address to get coordinates",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"address": {"type": "string"}},
+                    "required": ["address"]
+                }
+            },
+            {
+                "name": "maps_text_search",
+                "description": "Search for places by text",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"keywords": {"type": "string"}},
+                    "required": ["keywords"]
+                }
+            }
+        ]
+        
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
+            result = await provider.select_mcp_tool(
+                user_intent="获取上海市的坐标",
+                available_tools=available_tools
+            )
+            
+            assert result["tool_name"] == "maps_geo"
+            assert result["arguments"] == {"address": "上海市"}
+            assert "reasoning" in result
+    
+    @pytest.mark.asyncio
+    async def test_select_mcp_tool_with_context(self):
+        provider = OpenAICompatibleProvider(
+            api_key="test-key",
+            base_url="https://api.test.com/v1",
+            model="gpt-3.5-turbo"
+        )
+        
+        mock_response = Mock()
+        mock_response.raise_for_status = Mock()
+        mock_response.aread = AsyncMock(return_value=json.dumps({
+            "choices": [{
+                "message": {
+                    "content": json.dumps({
+                        "tool_name": "get_ip_location",
+                        "arguments": {},
+                        "reasoning": "Use IP location for current position"
+                    }, ensure_ascii=False)
+                }
+            }]
+        }).encode('utf-8'))
+        
+        available_tools = [
+            {
+                "name": "get_ip_location",
+                "description": "Get location based on IP address",
+                "inputSchema": {"type": "object", "properties": {}}
+            },
+            {
+                "name": "geocode",
+                "description": "Convert address to coordinates",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"address": {"type": "string"}}
+                }
+            }
+        ]
+        
+        context = {"user_preference": "quick_location"}
+        
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
+            result = await provider.select_mcp_tool(
+                user_intent="快速获取我的位置",
+                available_tools=available_tools,
+                context=context
+            )
+            
+            assert result["tool_name"] == "get_ip_location"
+            assert result["arguments"] == {}
 
 
 class TestCreateAIProvider:
