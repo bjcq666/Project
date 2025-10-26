@@ -108,7 +108,7 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[TextCon
         end_name = arguments.get("end_name", "终点")
         
         try:
-            url = f"https://uri.amap.com/navigation?from={start_lng},{start_lat}&to={end_lng},{end_lat}&mode=car&policy=1&src=myapp&coordinate=gaode&callnative=0"
+            url = f"https://uri.amap.com/navigation?from={start_lng},{start_lat}&to={end_lng},{end_lat}&mode=car&policy=1&src=myapp&coordinate=gaode&callnative=1"
             
             webbrowser.open(url)
             

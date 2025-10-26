@@ -156,3 +156,5 @@ class TestHandleCallTool:
             called_url = mock_open.call_args[0][0]
             assert "sname=" not in called_url
             assert "dname=" not in called_url
+            assert "callnative=1" in called_url
+            assert called_url.count(",,") == 0
