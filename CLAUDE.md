@@ -37,9 +37,54 @@ Browser Control MCP Server → 打开浏览器导航
   - OpenAI 兼容 API（七牛、OpenAI、Azure 等）
 - **主要功能**:
   - `create_ai_provider()`: 工厂方法，根据环境变量创建 AI 提供商
-  - `get_completion()`: 统一的 AI 调用接口
+  - `parse_navigation_request()`: 解析导航请求
+  - `select_mcp_tool()`: 智能选择 MCP 工具
+  - `parse_mcp_response()`: 使用 AI 解析 MCP 响应
+  - `generate_navigation_url()`: 生成导航 URL
+  - `set_context()`: 设置对话上下文
+  - `clear_context()`: 清除对话上下文
+- **上下文管理**:
+  - 支持对话历史记录
+  - 提供上下文感知的 AI 响应
+  - 所有 AI 调用支持对话上下文
 
-#### 2. MCP 客户端层
+#### 2. AI Context 层 (`ai_context.py`)
+- **职责**: 管理 AI 对话上下文和会话状态
+- **核心类**: `AIContext`
+- **主要功能**:
+  - `add_user_message()`: 添加用户消息到上下文
+  - `add_assistant_message()`: 添加助手消息到上下文
+  - `add_system_message()`: 添加系统消息到上下文
+  - `set_start_location()`: 设置起点位置
+  - `set_end_location()`: 设置终点位置
+  - `set_preference()`: 设置用户偏好
+  - `get_conversation_history()`: 获取对话历史
+  - `get_context_summary()`: 获取上下文摘要
+  - `reset()`: 重置整个上下文
+- **特点**:
+  - 维护对话历史（默认最多 10 条消息）
+  - 跟踪会话数据（起点、终点、用户偏好）
+  - 提供上下文摘要供 AI 使用
+  - 支持自动历史记录修剪
+
+#### 3. Constants 层 (`constants.py`)
+- **职责**: 集中管理所有硬编码值和配置常量
+- **主要常量**:
+  - `DEFAULT_LOCATION`: 默认位置（北京）
+  - `CITY_TRANSLATIONS`: 城市名称中英文翻译映射
+  - `REGION_TRANSLATIONS`: 地区名称中英文翻译映射
+  - `COUNTRY_TRANSLATIONS`: 国家代码翻译映射
+  - `CURRENT_LOCATION_KEYWORDS`: 当前位置关键词列表
+  - `GPS_PARAM_OPTIONS`: GPS 参数选项
+  - `NAVIGATION_STEPS`: 导航步骤定义
+- **辅助函数**:
+  - `get_step_label()`: 获取格式化的步骤标签
+- **优势**:
+  - 提高代码可维护性
+  - 减少重复代码
+  - 便于配置修改
+
+#### 4. MCP 客户端层
 ##### 通用 MCP 客户端 (`mcp_client.py`)
 - **职责**: 实现 MCP 协议客户端
 - **支持的传输方式**:
@@ -63,27 +108,34 @@ Browser Control MCP Server → 打开浏览器导航
   - `create_amap_client()`: 工厂方法，根据配置创建客户端
   - `geocode()`: 地理编码（地址 → 坐标）
 
-#### 3. MCP 服务器层 (`mcp_browser_server.py`)
+#### 5. MCP 服务器层 (`mcp_browser_server.py`)
 - **职责**: 浏览器控制 MCP 服务器
 - **提供的工具**:
   - `open_url`: 在默认浏览器中打开 URL
   - `open_map_navigation`: 打开地图导航（带起点终点坐标）
 - **特点**: 可独立运行，供其他 MCP 客户端调用
 
-#### 4. 语音识别模块 (`voice_recognizer.py`)
+#### 6. 语音识别模块 (`voice_recognizer.py`)
 - **职责**: 语音输入识别
 - **支持的引擎**:
   - Vosk（离线识别）
   - Google Speech Recognition（在线识别）
 - **模型**: 使用中文语音模型 (`model-small-cn`)
 
-#### 5. 主应用程序 (`main.py`)
+#### 7. 主应用程序 (`main.py`)
 - **职责**: 协调所有模块，实现完整的导航流程
 - **流程**:
-  1. 连接到高德 MCP 服务器
-  2. 使用 AI 解析用户输入（提取起点和终点）
-  3. 通过 MCP 调用高德地图服务获取坐标
-  4. 打开浏览器导航
+  1. 创建 AIContext 实例管理会话
+  2. 连接到高德 MCP 服务器
+  3. 使用 AI 解析用户输入（提取起点和终点）
+  4. 设置 AI Provider 的对话上下文
+  5. 通过 MCP 调用高德地图服务获取坐标
+  6. 跟踪起点和终点到上下文
+  7. 打开浏览器导航
+- **改进点**:
+  - 使用 `constants.py` 中的常量替代硬编码值
+  - 集成 AI 上下文管理提供更智能的响应
+  - 使用 `get_step_label()` 提供一致的进度显示
 
 ## 文件夹结构和命名规则
 
@@ -93,7 +145,9 @@ Browser Control MCP Server → 打开浏览器导航
 │   └── ai_navigator/           # 主要源代码包
 │       ├── __init__.py         # 包初始化，版本信息
 │       ├── main.py             # 主应用程序入口
-│       ├── ai_provider.py      # AI 提供商抽象层
+│       ├── ai_provider.py      # AI 提供商抽象层（支持上下文管理）
+│       ├── ai_context.py       # AI 对话上下文管理
+│       ├── constants.py        # 常量和配置值
 │       ├── mcp_client.py       # 通用 MCP 客户端实现
 │       ├── amap_mcp_client.py  # 高德地图 MCP 客户端
 │       ├── mcp_browser_server.py # 浏览器控制 MCP 服务器
@@ -104,6 +158,7 @@ Browser Control MCP Server → 打开浏览器导航
 │   ├── conftest.py            # pytest 配置和共享 fixtures
 │   ├── test_main.py           # 主应用程序测试
 │   ├── test_ai_provider.py    # AI 提供商测试
+│   ├── test_ai_context.py     # AI 上下文管理测试（建议添加）
 │   ├── test_mcp_client.py     # MCP 客户端测试
 │   ├── test_amap_mcp_client.py # 高德客户端测试
 │   ├── test_mcp_browser_server.py # 浏览器服务器测试
@@ -392,10 +447,43 @@ async with create_mcp_client(...) as client:
     result = await client.call_tool(...)
 ```
 
-### 5. 用户体验
-- **进度反馈**: 每个步骤提供清晰的进度提示
+### 5. 常量管理
+- **集中管理**: 所有硬编码值应定义在 `constants.py`
+- **命名规范**: 常量使用全大写 + 下划线命名
+- **分类组织**: 相关常量分组在一起（如城市翻译、导航步骤等）
+```python
+# 好的实践
+from ai_navigator.constants import CITY_TRANSLATIONS, get_step_label
+
+chinese_city = CITY_TRANSLATIONS.get("Beijing", "北京")
+step_label = get_step_label("CONNECT")
+print(f"{step_label} Connecting to server...")
+```
+
+### 6. 上下文管理
+- **AI 上下文**: 使用 `AIContext` 类管理对话历史
+- **会话跟踪**: 跟踪起点、终点和用户偏好
+- **上下文传递**: 在 AI 调用前设置上下文
+```python
+# 好的实践
+from ai_navigator.ai_context import AIContext
+
+context = AIContext(max_history=10)
+context.add_user_message(user_input)
+context.set_start_location(start_coords)
+
+# 将上下文传递给 AI Provider
+ai_provider.set_context(
+    context.get_conversation_history(),
+    context.get_context_summary()
+)
+```
+
+### 7. 用户体验
+- **进度反馈**: 使用 `get_step_label()` 提供一致的进度提示
 - **错误提示**: 错误信息应易于理解，包含解决建议
 - **自然语言**: 支持多种自然语言表达方式
+- **上下文感知**: AI 能够引用之前的对话提供更智能的响应
 
 ## 常见任务和命令
 
@@ -518,7 +606,12 @@ jobs:
 - [ ] 可配置的 MCP Server 注册表
 - [ ] 完整的日志系统（替换 print）
 - [x] .env 配置文件支持（已实现 v0.1.0）
+- [x] 常量提取和集中管理（已实现 v0.2.0）
+- [x] AI 对话上下文管理（已实现 v0.2.0）
+- [x] AI 驱动的 MCP 响应解析（已实现 v0.2.0）
 - [ ] 高级配置文件支持（YAML/TOML）
+- [ ] 用户偏好持久化
+- [ ] 对话导出/导入功能
 
 ## 参考资源
 
@@ -530,14 +623,24 @@ jobs:
 
 ## 版本历史
 
-- **v0.1.0** (当前版本)
+- **v0.2.0** (当前版本)
+  - ✅ 新增 `constants.py` 模块（集中管理硬编码值）
+  - ✅ 新增 `ai_context.py` 模块（AI 对话上下文管理）
+  - ✅ 增强 AI Provider 支持上下文管理
+  - ✅ AI 驱动的 MCP 响应解析
+  - ✅ 改进代码可维护性和减少重复
+  - ✅ 更智能的上下文感知 AI 响应
+  - 相关 PR: #45
+
+- **v0.1.0**
   - 初始版本
   - 基本的导航功能
   - 多 AI 提供商支持
   - MCP 架构实现
   - 语音识别支持
+  - .env 配置文件支持
 
 ---
 
-**最后更新**: 2025-10-25
+**最后更新**: 2025-10-26
 **维护者**: AI Navigator Team
