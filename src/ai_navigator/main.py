@@ -250,7 +250,7 @@ async def get_location_coordinates(location_name: str, mcp_client, ai_provider=N
                         if location_str:
                             lng, lat = location_str.split(",")
                             return {
-                                "name": location_name,
+                                "name": result_item.get("name", location_name),
                                 "longitude": float(lng),
                                 "latitude": float(lat),
                                 "formatted_address": f"{result_item.get('province', '')}{result_item.get('city', '')}"
@@ -262,7 +262,7 @@ async def get_location_coordinates(location_name: str, mcp_client, ai_provider=N
                         if location_str:
                             lng, lat = location_str.split(",")
                             return {
-                                "name": location_name,
+                                "name": poi.get("name", location_name),
                                 "longitude": float(lng),
                                 "latitude": float(lat),
                                 "formatted_address": poi.get("address", location_name)
@@ -271,7 +271,7 @@ async def get_location_coordinates(location_name: str, mcp_client, ai_provider=N
                     elif data.get("status") == "success" and data.get("location"):
                         loc = data["location"]
                         return {
-                            "name": location_name,
+                            "name": data.get("name", location_name),
                             "longitude": loc["longitude"],
                             "latitude": loc["latitude"],
                             "formatted_address": data.get("formatted_address", location_name)
