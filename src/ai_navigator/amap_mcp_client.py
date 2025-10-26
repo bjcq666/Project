@@ -32,6 +32,9 @@ class AmapMCPClient:
         self.session: Optional[ClientSession] = None
         self._api_key = os.getenv("AMAP_API_KEY", "")
         self.client = None
+        self.stdio = None
+        self.write = None
+        self.stdio_context = None
         
     async def connect(self):
         """Connect to the Amap MCP server."""
@@ -63,8 +66,8 @@ class AmapMCPClient:
                 } if self._api_key else None
             )
             
-            stdio_transport = await stdio_client(server_params)
-            self.stdio, self.write = stdio_transport
+            self.stdio_context = stdio_client(server_params)
+            self.stdio, self.write = await self.stdio_context.__aenter__()
             self.session = ClientSession(self.stdio, self.write)
             await self.session.initialize()
         
@@ -92,6 +95,12 @@ class AmapMCPClient:
         elif self.session:
             await self.session.__aexit__(None, None, None)
             self.session = None
+        
+        if self.stdio_context:
+            await self.stdio_context.__aexit__(None, None, None)
+            self.stdio_context = None
+            self.stdio = None
+            self.write = None
 
     async def geocode(self, address: str) -> Dict[str, Any]:
         """
