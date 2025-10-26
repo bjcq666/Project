@@ -189,6 +189,7 @@ class MCPServerConnection:
         self.session: Optional[ClientSession] = None
         self.stdio = None
         self.write = None
+        self.stdio_context = None
         self.connected = False
         self.tools_metadata: Dict[str, ToolMetadata] = {}
         self.kwargs = kwargs
@@ -219,8 +220,8 @@ class MCPServerConnection:
             env=os.environ.copy()
         )
         
-        stdio_transport = await stdio_client(server_params)
-        self.stdio, self.write = stdio_transport
+        self.stdio_context = stdio_client(server_params)
+        self.stdio, self.write = await self.stdio_context.__aenter__()
         self.session = ClientSession(self.stdio, self.write)
         await self.session.initialize()
         
@@ -249,11 +250,22 @@ class MCPServerConnection:
             try:
                 await self.session.__aexit__(None, None, None)
             except Exception as e:
-                logger.error(f"Error disconnecting from {self.name}: {e}")
+                logger.error(f"Error disconnecting session from {self.name}: {e}")
             finally:
                 self.session = None
-                self.connected = False
-                logger.info(f"Disconnected from {self.name}")
+        
+        if self.stdio_context:
+            try:
+                await self.stdio_context.__aexit__(None, None, None)
+            except Exception as e:
+                logger.error(f"Error disconnecting stdio from {self.name}: {e}")
+            finally:
+                self.stdio_context = None
+                self.stdio = None
+                self.write = None
+        
+        self.connected = False
+        logger.info(f"Disconnected from {self.name}")
     
     async def discover_tools(self) -> List[ToolMetadata]:
         """Discover available tools from the server"""
