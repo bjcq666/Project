@@ -239,8 +239,9 @@ Only return JSON, no other text."""
         
         url = (
             f"https://uri.amap.com/navigation?"
-            f"from={start_coords['longitude']},{start_coords['latitude']},{sname}&"
-            f"to={end_coords['longitude']},{end_coords['latitude']},{dname}&"
+            f"from={start_coords['longitude']},{start_coords['latitude']}&"
+            f"to={end_coords['longitude']},{end_coords['latitude']}&"
+            f"sname={sname}&dname={dname}&"
             f"mode={params.get('mode', 'car')}&"
             f"policy={params.get('policy', 1)}&"
             f"src=ai-navigator&coordinate=gaode&"
@@ -489,8 +490,9 @@ Only return JSON, no other text."""
         
         url = (
             f"https://uri.amap.com/navigation?"
-            f"from={start_coords['longitude']},{start_coords['latitude']},{sname}&"
-            f"to={end_coords['longitude']},{end_coords['latitude']},{dname}&"
+            f"from={start_coords['longitude']},{start_coords['latitude']}&"
+            f"to={end_coords['longitude']},{end_coords['latitude']}&"
+            f"sname={sname}&dname={dname}&"
             f"mode={params.get('mode', 'car')}&"
             f"policy={params.get('policy', 1)}&"
             f"src=ai-navigator&coordinate=gaode&"
